@@ -10,6 +10,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserEnum {
+  ADMIN
+  NORMAL
+}
+
 model User {
   id       Int      @id @default(autoincrement())
   createAt DateTime @default(now())
@@ -21,7 +26,18 @@ model User {
 
   firstname String?
   lastName  String?
-  PlayList  PlayList[]
+
+  role     UserEnum   @default(NORMAL)
+  PlayList PlayList[]
+}
+
+enum PlayListType {
+  CHILL
+  GAMING
+  WORKING
+  SPLEEPING
+  PARTY
+  UNKNOW
 }
 
 model PlayList {
@@ -29,7 +45,8 @@ model PlayList {
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  name String @default("user play list name")
+  name String        @default("user play list name")
+  type PlayListType? @default(UNKNOW)
 
   userID Int
   user   User @relation(fields: [userID], references: [id], onDelete: Cascade)
@@ -56,8 +73,8 @@ model Song {
   name      String
   size      Int?
   extension String?
-  type      SONG_TYPE?
+  type      SONG_TYPE? @default(OTHERS)
 
   playListID Int
-  playList   PlayList @relation(fields: [playListID], references: [id])
+  playList   PlayList @relation(fields: [playListID], references: [id], onDelete: Cascade)
 }
