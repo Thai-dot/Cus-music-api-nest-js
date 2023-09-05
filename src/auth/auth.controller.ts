@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   HttpCode,
   HttpStatus,
   Post,
@@ -22,5 +23,10 @@ export class AuthController {
   @Post('signin')
   signin(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  @Delete('delete-db')
+  deleteDB() {
+    return this.authService.deleteDB();
   }
 }

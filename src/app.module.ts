@@ -1,24 +1,33 @@
-import { Module } from '@nestjs/common';
-import { AuthController } from './auth/auth.controller';
+import { Module, forwardRef } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module';
-import { UserController } from './user/user.controller';
-import { UserService } from './user/user.service';
 import { UserModule } from './user/user.module';
 import { PlayListModule } from './play-list/play-list.module';
+import { SongModule } from './song/song.module';
+import { SongUploadModule } from './song-upload/song-upload.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
+import { ImageUploadModule } from './image-upload/image-upload.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    forwardRef(() =>
+      ServeStaticModule.forRoot({
+        rootPath: join(__dirname, '..', 'uploads'),
+        serveRoot: '/uploads/',
+      }),
+    ),
     AuthModule,
     PrismaModule,
     UserModule,
     PlayListModule,
+    SongModule,
+    SongUploadModule,
+    ImageUploadModule,
   ],
-  controllers: [UserController],
-  providers: [UserService],
 })
 export class AppModule {}

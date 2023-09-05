@@ -27,8 +27,10 @@ model User {
   firstname String?
   lastName  String?
 
-  role     UserEnum   @default(NORMAL)
+  role UserEnum @default(NORMAL)
+
   PlayList PlayList[]
+  Song     Song[]
 }
 
 enum PlayListType {
@@ -49,9 +51,8 @@ model PlayList {
   type PlayListType? @default(UNKNOW)
 
   userID Int
-  user   User @relation(fields: [userID], references: [id], onDelete: Cascade)
-
-  Song Song[]
+  user   User           @relation(fields: [userID], references: [id], onDelete: Cascade)
+  song   PlayListSong[]
 }
 
 enum SONG_TYPE {
@@ -70,11 +71,32 @@ model Song {
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  name      String
-  size      Int?
-  extension String?
-  type      SONG_TYPE? @default(OTHERS)
+  songName     String
+  songFileName String
+  size         Float?     @default(0)
+  extension    String?
+  type         SONG_TYPE? @default(OTHERS)
+  imgURL       String?    @default("")
+  visibility   Boolean    @default(false)
 
+  likes       Int @default(0)
+  dislikes    Int @default(0)
+  listenTimes Int @default(0)
+
+  userID Int
+  user   User @relation(fields: [userID], references: [id], onDelete: Cascade)
+
+  playList PlayListSong[]
+}
+
+model PlayListSong {
   playListID Int
-  playList   PlayList @relation(fields: [playListID], references: [id], onDelete: Cascade)
+  songID     Int
+  PlayList   PlayList @relation(fields: [playListID], references: [id], onDelete: Cascade)
+  Song       Song     @relation(fields: [songID], references: [id], onDelete: Cascade)
+
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  @@id([playListID, songID])
 }

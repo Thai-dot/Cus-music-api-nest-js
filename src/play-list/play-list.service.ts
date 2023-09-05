@@ -56,7 +56,7 @@ export class PlayListService {
           userID,
         },
         include: {
-          Song: true,
+          song: true,
         },
       });
 

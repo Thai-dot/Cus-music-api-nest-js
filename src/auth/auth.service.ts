@@ -79,4 +79,15 @@ export class AuthService {
       access_token: token,
     };
   }
+
+  async deleteDB() {
+    try {
+      this.prismaService.cleanDb();
+      return {
+        message: 'deleted db successfully',
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
 }
