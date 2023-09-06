@@ -49,6 +49,7 @@ model PlayList {
 
   name String        @default("user play list name")
   type PlayListType? @default(UNKNOW)
+  visibility Boolean @default(false)
 
   userID Int
   user   User           @relation(fields: [userID], references: [id], onDelete: Cascade)

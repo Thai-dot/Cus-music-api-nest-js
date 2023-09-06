@@ -11,6 +11,43 @@ import { PlayListDto, QueryGetAllPlayList } from './dto';
 export class PlayListService {
   constructor(private prismaService: PrismaService) {}
 
+  async getAllPlayList(query: QueryGetAllPlayList) {
+    try {
+      const { searchName, limit, page, sortBy, sortType } = query;
+
+      const where = {
+        name: { contains: searchName },
+        visibility: true,
+      };
+
+      const [totalItem, playListData] = await Promise.all([
+        this.prismaService.playList.count({
+          where,
+        }),
+        this.prismaService.playList.findMany({
+          where,
+          take: limit,
+          skip: (page - 1) * limit,
+          orderBy: {
+            [sortBy]: sortType,
+          },
+        }),
+      ]);
+
+      return {
+        data: playListData,
+        pagination: {
+          totalItem,
+          limit,
+          page,
+          hasItem: (page - 1) * limit < totalItem,
+        },
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getPlayListByUser(userID: number, query: QueryGetAllPlayList) {
     try {
       const { searchName, limit, page, sortBy, sortType } = query;

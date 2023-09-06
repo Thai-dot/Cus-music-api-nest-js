@@ -2,6 +2,6 @@ import { Module } from '@nestjs/common';
 import { ImageUploadController } from './image-upload.controller';
 
 @Module({
-  controllers: [ImageUploadController]
+  controllers: [ImageUploadController],
 })
 export class ImageUploadModule {}

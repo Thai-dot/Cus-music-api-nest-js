@@ -1,5 +1,6 @@
 import { PlayListType } from '@prisma/client';
 import {
+  IsBoolean,
   IsEnum,
   IsNotEmpty,
   IsOptional,
@@ -19,4 +20,8 @@ export class PlayListDto {
   @IsOptional()
   @IsEnum(PlayListType)
   type?: PlayListType;
+
+  @IsBoolean()
+  @IsOptional()
+  visibility = false;
 }

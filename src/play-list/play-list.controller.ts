@@ -22,6 +22,11 @@ import { TransformInterceptor } from 'src/interceptor/response.interceptor';
 export class PlayListController {
   constructor(private playListService: PlayListService) {}
 
+  @Get('get-all')
+  getAll(@Query() query: QueryGetAllPlayList) {
+    return this.playListService.getAllPlayList(query);
+  }
+
   @Get('get')
   getAllPlayList(
     @GetUser('id') userID: number,

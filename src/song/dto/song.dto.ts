@@ -1,6 +1,7 @@
 import { SONG_TYPE } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
+  IsBoolean,
   IsEnum,
   IsNumber,
   IsOptional,
@@ -48,4 +49,8 @@ export class SongDto {
   @IsOptional()
   @Min(0)
   dislikes = 0;
+
+  @IsBoolean()
+  @IsOptional()
+  visibility = false;
 }

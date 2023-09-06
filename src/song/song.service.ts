@@ -71,6 +71,36 @@ export class SongService {
     }
   }
 
+  async createSongByPlayList(userID: number, playListID: number, dto: SongDto) {
+    try {
+      const data = await this.prismaService.song.create({
+        data: {
+          songName: dto.songName,
+          songFileName: dto.songFileName,
+          extension: dto.extension,
+          imgURL: dto.imgURL,
+          size: dto.size,
+          type: dto.type,
+          userID: userID,
+        },
+      });
+
+      const assignedToPlayList = await this.prismaService.playListSong.create({
+        data: {
+          songID: data.id,
+          playListID: playListID,
+        },
+      });
+
+      return {
+        song: data,
+        belongToPlayList: assignedToPlayList,
+      };
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   async updateSong(songID: number, dto: SongDto) {
     try {
       const updateData = await this.prismaService.song.update({

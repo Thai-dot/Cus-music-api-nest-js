@@ -30,7 +30,7 @@ export class SongController {
 
   @Get('get-all')
   getAllSongByUser(@GetUser('id') UserID: number) {
-    return;
+    return this.songService.getAllSongByUser(UserID);
   }
 
   @Get('get-one/:songId')
@@ -38,17 +38,21 @@ export class SongController {
     return this.songService.getSingleSong(songID);
   }
 
-  //create song without playlist id
+  //create song with user id
   @Post('create')
-  createSong(@Body() dto: SongDto) {
-    return this.songService.createSong(null, dto);
+  createSong(@GetUser('id') userID, @Body() dto: SongDto) {
+    return this.songService.createSong(userID, dto);
   }
 
-  //create song with playlist id
-  @Post('create')
+  //create song with play list id
+  @Post('create/:id')
   @UseGuards(PlaylistOwnerGuard)
-  createSongWithPlayListID(@GetUser('id') userID, @Body() dto: SongDto) {
-    return this.songService.createSong(userID, dto);
+  createSongWithPlayList(
+    @GetUser('id') userID,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: SongDto,
+  ) {
+    return this.songService.createSongByPlayList(userID, id, dto);
   }
 
   @Patch('update/:songID')
