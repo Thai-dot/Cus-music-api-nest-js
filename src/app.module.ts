@@ -10,6 +10,7 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { ImageUploadModule } from './image-upload/image-upload.module';
 
+
 @Module({
   imports: [
     ConfigModule.forRoot({

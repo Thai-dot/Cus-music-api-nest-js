@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  HttpStatus,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PlayListDto, QueryGetAllPlayList } from './dto';
@@ -135,6 +136,50 @@ export class PlayListService {
       });
 
       return { playList };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async assignSongToPlayList(playListID: number, songIDsDTO: number[]) {
+    try {
+      if (songIDsDTO.length === 0)
+        return new BadRequestException('Array is empty');
+
+      const createData = songIDsDTO.map((songID) => ({
+        playListID,
+        songID,
+      }));
+      const result = await this.prismaService.playListSong.createMany({
+        data: createData,
+        skipDuplicates: true,
+      });
+
+      return {
+        code: HttpStatus.ACCEPTED,
+        message: 'Assigned song(s) successfully',
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async unassignedSongFromPlayList(playListID: number, songIDsDTO: number[]) {
+    try {
+      if (songIDsDTO.length === 0)
+        return new BadRequestException('Array is empty');
+
+      const { count } = await this.prismaService.playListSong.deleteMany({
+        where: {
+          songID: { in: songIDsDTO },
+          playListID,
+        },
+      });
+
+      return {
+        code: HttpStatus.ACCEPTED,
+        message: `Unassigned ${count} song(s) successfully`,
+      };
     } catch (error) {
       throw error;
     }

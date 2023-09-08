@@ -5,7 +5,6 @@ import {
   HttpCode,
   HttpStatus,
   Post,
-  Req,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthDto, LoginDto } from './dto';
@@ -23,6 +22,11 @@ export class AuthController {
   @Post('signin')
   signin(@Body() dto: LoginDto) {
     return this.authService.login(dto);
+  }
+
+  @Post('verify-2fa')
+  verify2FA(@Body('email') email: string, @Body('code') code: string) {
+    return this.authService.verify2FACode(email, code);
   }
 
   @Delete('delete-db')

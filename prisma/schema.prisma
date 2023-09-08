@@ -20,9 +20,10 @@ model User {
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  email    String  @unique
-  password String
-  isVerify Boolean @default(false)
+  email       String  @unique
+  password    String
+  isVerify    Boolean @default(false)
+  twoFASecret String  @default("")
 
   firstname String?
   lastName  String?
@@ -47,9 +48,9 @@ model PlayList {
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
 
-  name String        @default("user play list name")
-  type PlayListType? @default(UNKNOW)
-  visibility Boolean @default(false)
+  name       String        @default("user play list name")
+  type       PlayListType? @default(UNKNOW)
+  visibility Boolean       @default(false)
 
   userID Int
   user   User           @relation(fields: [userID], references: [id], onDelete: Cascade)
@@ -93,8 +94,8 @@ model Song {
 model PlayListSong {
   playListID Int
   songID     Int
-  PlayList   PlayList @relation(fields: [playListID], references: [id], onDelete: Cascade)
-  Song       Song     @relation(fields: [songID], references: [id], onDelete: Cascade)
+  PlayList   PlayList @relation(fields: [playListID], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Song       Song     @relation(fields: [songID], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt
