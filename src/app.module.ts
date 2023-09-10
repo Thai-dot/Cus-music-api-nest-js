@@ -9,6 +9,7 @@ import { SongUploadModule } from './song-upload/song-upload.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { ImageUploadModule } from './image-upload/image-upload.module';
+import { SearchModule } from './elasticsearch/search.module';
 
 
 @Module({
@@ -29,6 +30,7 @@ import { ImageUploadModule } from './image-upload/image-upload.module';
     SongModule,
     SongUploadModule,
     ImageUploadModule,
+    SearchModule,
   ],
 })
 export class AppModule {}

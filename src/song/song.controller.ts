@@ -9,6 +9,7 @@ import {
   UseInterceptors,
   Patch,
   Get,
+  Query,
 } from '@nestjs/common';
 import { JwtGuard } from 'src/auth/guard';
 import { SongService } from './song.service';
@@ -17,6 +18,8 @@ import { PlaylistOwnerGuard } from 'src/play-list/guard';
 import { SongDto } from './dto';
 import { TransformInterceptor } from 'src/interceptor/response.interceptor';
 import { GetUser } from 'src/auth/decorator';
+import { query } from 'express';
+import { SongQueryDTO } from './dto/song-query.dto';
 
 @Controller('song')
 @UseGuards(JwtGuard)
@@ -29,8 +32,8 @@ export class SongController {
   }
 
   @Get('get-all')
-  getAllSongByUser(@GetUser('id') UserID: number) {
-    return this.songService.getAllSongByUser(UserID);
+  getAllSongByUser(@GetUser('id') UserID: number, @Query() query:SongQueryDTO) {
+    return this.songService.getAllSongByUser(UserID, query);
   }
 
   @Get('get-one/:songId')

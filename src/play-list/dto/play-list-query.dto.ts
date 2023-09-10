@@ -17,6 +17,7 @@ enum SortType {
 enum SortBy {
   Name = 'name',
   Date = 'date',
+  Type = 'type',
 }
 
 export class QueryGetAllPlayList {
@@ -29,7 +30,8 @@ export class QueryGetAllPlayList {
   @Type(() => Number)
   limit = 5;
 
-  @IsNumber()
+  @IsInt()
+  @Type(() => Number)
   page = 1;
 
   @IsEnum(SortType)

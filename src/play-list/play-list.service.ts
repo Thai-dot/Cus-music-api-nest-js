@@ -1,4 +1,3 @@
-import { type } from 'os';
 import {
   Injectable,
   NotFoundException,
@@ -7,42 +6,61 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { PlayListDto, QueryGetAllPlayList } from './dto';
+import { SearchService } from 'src/elasticsearch/search.service';
+import { ES_INDEX_NAME } from 'src/constant/elastic.constant';
 
 @Injectable()
 export class PlayListService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly elasticSearch: SearchService,
+  ) {}
 
   async getAllPlayList(query: QueryGetAllPlayList) {
     try {
       const { searchName, limit, page, sortBy, sortType } = query;
 
-      const where = {
-        name: { contains: searchName },
-        visibility: true,
+      const queryBody: any = [
+        {
+          match: {
+            visibility: true,
+          },
+        },
+      ];
+      if (searchName?.length !== 0) {
+        queryBody.push({
+          match_phrase_prefix: {
+            name: searchName,
+          },
+        });
+      }
+
+      const body = {
+        from: (page - 1) * limit,
+        size: limit,
+        sort: [
+          {
+            [`${sortBy}.keyword`]: {
+              order: sortType,
+            },
+          },
+        ],
+        query: {
+          bool: {
+            must: queryBody,
+          },
+        },
       };
 
-      const [totalItem, playListData] = await Promise.all([
-        this.prismaService.playList.count({
-          where,
-        }),
-        this.prismaService.playList.findMany({
-          where,
-          take: limit,
-          skip: (page - 1) * limit,
-          orderBy: {
-            [sortBy]: sortType,
-          },
-        }),
-      ]);
+      const data = await this.elasticSearch.searchIndex(
+        ES_INDEX_NAME.playlist,
+        body,
+        '1m',
+      );
 
       return {
-        data: playListData,
-        pagination: {
-          totalItem,
-          limit,
-          page,
-          hasItem: (page - 1) * limit < totalItem,
-        },
+        data: data.hits.hits,
+        totalItems: data.hits.total,
       };
     } catch (error) {
       throw error;
@@ -53,33 +71,47 @@ export class PlayListService {
     try {
       const { searchName, limit, page, sortBy, sortType } = query;
 
-      const where = {
-        name: { contains: searchName },
-        userID,
+      const queryBody: any = [
+        {
+          match: {
+            visibility: true,
+          },
+        },
+      ];
+      if (searchName?.length !== 0) {
+        queryBody.push({
+          match_phrase_prefix: {
+            name: searchName,
+          },
+        });
+      }
+
+      const body = {
+        from: (page - 1) * limit,
+        size: limit,
+        sort: [
+          {
+            [`${sortBy}.keyword`]: {
+              order: sortType,
+            },
+          },
+        ],
+        query: {
+          bool: {
+            must: queryBody,
+          },
+        },
       };
 
-      const [totalItem, playListData] = await Promise.all([
-        this.prismaService.playList.count({
-          where,
-        }),
-        this.prismaService.playList.findMany({
-          where,
-          take: limit,
-          skip: (page - 1) * limit,
-          orderBy: {
-            [sortBy]: sortType,
-          },
-        }),
-      ]);
+      const data = await this.elasticSearch.searchIndex(
+        ES_INDEX_NAME.playlist,
+        body,
+        '1m',
+      );
 
       return {
-        data: playListData,
-        pagination: {
-          totalItem,
-          limit,
-          page,
-          hasItem: (page - 1) * limit < totalItem,
-        },
+        data: data.hits.hits,
+        totalItems: data.hits.total,
       };
     } catch (error) {
       throw error;
@@ -119,6 +151,12 @@ export class PlayListService {
         },
       });
 
+      await this.elasticSearch.updateDocument(
+        ES_INDEX_NAME.playlist,
+        updatePlayList.id.toString(),
+        updatePlayList,
+      );
+
       return updatePlayList;
     } catch (error) {
       throw error;
@@ -129,11 +167,16 @@ export class PlayListService {
     try {
       const playList = await this.prismaService.playList.create({
         data: {
-          name: dto.name,
-          type: dto.type,
+          ...dto,
           userID: userId,
         },
       });
+
+      await this.elasticSearch.addDocument(
+        ES_INDEX_NAME.playlist,
+        playList.id.toString(),
+        playList,
+      );
 
       return { playList };
     } catch (error) {
@@ -211,6 +254,11 @@ export class PlayListService {
           id: { in: dto },
         },
       });
+
+      await this.elasticSearch.deleteMultipleDocuments(
+        ES_INDEX_NAME.playlist,
+        dto.map(String),
+      );
 
       return {
         message: `deleted ${count} playlist(s)`,

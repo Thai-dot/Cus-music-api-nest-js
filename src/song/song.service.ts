@@ -1,10 +1,16 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { SongDto } from './dto';
+import { SearchService } from 'src/elasticsearch/search.service';
+import { ES_INDEX_NAME } from 'src/constant/elastic.constant';
+import { SongQueryDTO } from './dto/song-query.dto';
 
 @Injectable()
 export class SongService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private searchService: SearchService,
+  ) {}
 
   async getAllSongByPlayList(id: number) {
     try {
@@ -23,15 +29,60 @@ export class SongService {
     }
   }
 
-  async getAllSongByUser(userID: number) {
+  async getAllSongByUser(userID: number, queryDTO: SongQueryDTO) {
     try {
-      const filterData = await this.prismaService.song.findMany({
-        where: {
-          userID,
-        },
-      });
+      const { songName, type, limit, page, visibility } = queryDTO;
 
-      return { data: filterData };
+      const queryBody: any = [];
+      if (visibility) {
+        queryBody.push({
+          match: {
+            visibility:visibility,
+          },
+        });
+      }
+
+      if (songName !== undefined) {
+      
+        queryBody.push({
+          match_phrase_prefix: {
+            songName: songName,
+          },
+        });
+      }
+
+      if (type !== undefined) {
+        queryBody.push({
+          match: {
+            type: type,
+          },
+        });
+      }
+      const query =
+        queryBody.length === 0
+          ? null
+          : {
+              bool: {
+                must: queryBody,
+              },
+            };
+
+      const body = {
+        from: (page - 1) * limit,
+        size: limit,
+      };
+
+      console.log(visibility)
+      if (query !== null) {
+        body['query'] = query;
+      }
+      const data = await this.searchService.searchIndex(
+        ES_INDEX_NAME.song,
+        body,
+        '1m',
+      );
+
+      return { data: data.hits.hits, totalItems: data.hits.total };
     } catch (error) {
       throw error;
     }
@@ -61,9 +112,16 @@ export class SongService {
           imgURL: dto.imgURL,
           size: dto.size,
           type: dto.type,
+          visibility: dto.visibility,
           userID: id,
         },
       });
+
+      await this.searchService.addDocument(
+        ES_INDEX_NAME.song,
+        data.id.toString(),
+        data,
+      );
 
       return data;
     } catch (error) {
@@ -81,6 +139,7 @@ export class SongService {
           imgURL: dto.imgURL,
           size: dto.size,
           type: dto.type,
+          visibility: dto.visibility,
           userID: userID,
         },
       });
@@ -91,6 +150,12 @@ export class SongService {
           playListID: playListID,
         },
       });
+
+      await this.searchService.addDocument(
+        ES_INDEX_NAME.song,
+        data.id.toString(),
+        data,
+      );
 
       return {
         song: data,
@@ -112,6 +177,12 @@ export class SongService {
         },
       });
 
+      await this.searchService.updateDocument(
+        ES_INDEX_NAME.song,
+        updateData.id.toString(),
+        updateData,
+      );
+
       return updateData;
     } catch (error) {
       throw error;
@@ -132,6 +203,11 @@ export class SongService {
         id: { in: dto },
       },
     });
+
+    await this.searchService.deleteMultipleDocuments(
+      ES_INDEX_NAME.song,
+      dto.map(String),
+    );
 
     return count === 0 ? 'nothing to delete' : 'deleted item(s) successfully';
   }
@@ -159,6 +235,13 @@ export class SongService {
         },
       },
     });
+
+    if (count !== 0) {
+      await this.searchService.deleteMultipleDocuments(
+        ES_INDEX_NAME.song,
+        getSongIDs.map(String),
+      );
+    }
 
     return count === 0 ? 'nothing to delete' : 'deleted item(s) successfully';
   }
