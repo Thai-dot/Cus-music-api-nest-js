@@ -77,6 +77,11 @@ export class PlayListService {
             visibility: true,
           },
         },
+        {
+          match: {
+            userID: userID,
+          },
+        },
       ];
       if (searchName?.length !== 0) {
         queryBody.push({

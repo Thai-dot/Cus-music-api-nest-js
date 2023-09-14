@@ -75,11 +75,14 @@ model Song {
 
   songName     String
   songFileName String
+  songURL      String?    @default("")
   size         Float?     @default(0)
   extension    String?
   type         SONG_TYPE? @default(OTHERS)
+  imgFileName  String?    @default("")
   imgURL       String?    @default("")
   visibility   Boolean    @default(false)
+  author       String?    @default("")
 
   likes       Int @default(0)
   dislikes    Int @default(0)

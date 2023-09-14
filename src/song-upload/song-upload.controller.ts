@@ -9,19 +9,26 @@ import {
   FileTypeValidator,
   MaxFileSizeValidator,
   UseGuards,
+  Delete,
+  Param,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-import { GetUser } from 'src/auth/decorator';
 import { JwtGuard } from 'src/auth/guard';
 import { v4 as uuid } from 'uuid';
+import * as path from 'path';
+import { SongUploadService } from './song-upload.service';
+import { getSongFilePath } from 'src/constant/file-path.constant';
 
 @UseGuards(JwtGuard)
 @Controller('song-upload')
 export class SongUploadController {
-  constructor(private config: ConfigService) {}
+  constructor(
+    private config: ConfigService,
+    private songUploadService: SongUploadService,
+  ) {}
 
   @Post('upload')
   @UseInterceptors(
@@ -40,7 +47,7 @@ export class SongUploadController {
         }
       },
       storage: diskStorage({
-        destination: './uploads/music',
+        destination: path.join(__dirname, '../../uploads/music'),
         filename: (req, file, callback) => {
           return callback(null, `${uuid()}${extname(file.originalname)}`);
         },
@@ -58,11 +65,18 @@ export class SongUploadController {
       }),
     )
     file: Express.Multer.File,
-    @GetUser('id') userID: number,
   ) {
-    const url = `${this.config.get('BASE_URL')}/${file.path
-      .split('\\')
-      .join('/')}`;
-    return { url };
+    const pathInfo = path.relative(process.cwd(), file.path).split('\\');
+    return this.songUploadService.createSongUploadInformation(
+      pathInfo,
+      file.size,
+      file.mimetype,
+    );
+  }
+
+  @Delete('delete/:filename')
+  deleteFile(@Param('filename') filename: string) {
+    const filePath = getSongFilePath(filename);
+    return this.songUploadService.deleteSongFile(filename, filePath);
   }
 }

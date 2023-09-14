@@ -22,6 +22,10 @@ export class SongDto {
   @IsOptional()
   songFileName?: string;
 
+  @IsString()
+  @IsOptional()
+  songURL?: string;
+
   @IsNumber()
   @Max(100)
   @Type(() => Number)
@@ -38,7 +42,15 @@ export class SongDto {
 
   @IsString()
   @IsOptional()
-  imgURL: string;
+  imgURL?: string;
+
+  @IsString()
+  @IsOptional()
+  author?: string;
+
+  @IsString()
+  @IsOptional()
+  imgFileName?: string;
 
   @IsNumber()
   @IsOptional()

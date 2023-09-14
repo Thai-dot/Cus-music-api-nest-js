@@ -1,4 +1,4 @@
-import { Module,Global } from '@nestjs/common';
+import { Module, Global } from '@nestjs/common';
 import { SearchService } from './search.service';
 import { ElasticsearchModule } from '@nestjs/elasticsearch';
 
@@ -6,10 +6,10 @@ import { ElasticsearchModule } from '@nestjs/elasticsearch';
 @Module({
   imports: [
     ElasticsearchModule.register({
-      node: process.env.ES_SEARCH_NODE,
+      node: process.env.ES_SEARCH_NODE || 'http://elasticsearch:9200',
     }),
   ],
   providers: [SearchService],
-  exports: [SearchService]
+  exports: [SearchService],
 })
 export class SearchModule {}

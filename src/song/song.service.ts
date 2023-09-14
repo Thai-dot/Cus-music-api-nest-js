@@ -4,12 +4,20 @@ import { SongDto } from './dto';
 import { SearchService } from 'src/elasticsearch/search.service';
 import { ES_INDEX_NAME } from 'src/constant/elastic.constant';
 import { SongQueryDTO } from './dto/song-query.dto';
+import { SongUploadService } from 'src/song-upload/song-upload.service';
+import {
+  getImgFilePath,
+  getSongFilePath,
+} from 'src/constant/file-path.constant';
+import { ImageUploadService } from 'src/image-upload/image-upload.service';
 
 @Injectable()
 export class SongService {
   constructor(
     private prismaService: PrismaService,
     private searchService: SearchService,
+    private songUploadService: SongUploadService,
+    private imgUploadService: ImageUploadService,
   ) {}
 
   async getAllSongByPlayList(id: number) {
@@ -37,13 +45,12 @@ export class SongService {
       if (visibility) {
         queryBody.push({
           match: {
-            visibility:visibility,
+            visibility: visibility,
           },
         });
       }
 
       if (songName !== undefined) {
-      
         queryBody.push({
           match_phrase_prefix: {
             songName: songName,
@@ -72,7 +79,6 @@ export class SongService {
         size: limit,
       };
 
-      console.log(visibility)
       if (query !== null) {
         body['query'] = query;
       }
@@ -90,13 +96,19 @@ export class SongService {
 
   async getSingleSong(songID: number) {
     try {
-      const getData = await this.prismaService.song.findFirst({
-        where: {
-          id: songID,
-        },
+     
+      const updatedSong = await this.prismaService.song.update({
+        where: { id: songID },
+        data: { listenTimes: { increment: 1 } },
+  
       });
+      await this.searchService.updateDocument(
+        ES_INDEX_NAME.song,
+        songID.toString(),
+        updatedSong,
+      );
 
-      return getData;
+      return updatedSong;
     } catch (error) {
       throw error;
     }
@@ -204,6 +216,8 @@ export class SongService {
       },
     });
 
+    await this.findDeleteFile(dto);
+
     await this.searchService.deleteMultipleDocuments(
       ES_INDEX_NAME.song,
       dto.map(String),
@@ -227,6 +241,8 @@ export class SongService {
     });
 
     const getSongIDs = findSongs.map((item) => item.Song.id);
+
+    await this.findDeleteFile(getSongIDs);
 
     const { count } = await this.prismaService.song.deleteMany({
       where: {
@@ -253,5 +269,37 @@ export class SongService {
       },
     });
     return getSongs.every((item) => item.userID === userID);
+  }
+
+  async findDeleteFile(dto: number[]) {
+    const getDataBeforeDelete = await this.prismaService.song.findMany({
+      where: {
+        id: {
+          in: dto,
+        },
+      },
+      select: {
+        songFileName: true,
+        imgFileName: true,
+      },
+    });
+
+    const listOfSongFileName = getDataBeforeDelete.map(
+      (item) => item.songFileName,
+    );
+
+    listOfSongFileName.forEach((item) => {
+      const filePath = getSongFilePath(item);
+      this.songUploadService.deleteSongFile(item, filePath);
+    });
+
+    const listOfImgFileName = getDataBeforeDelete.map(
+      (item) => item.imgFileName,
+    );
+
+    listOfImgFileName.forEach((item) => {
+      const filePath = getImgFilePath(item);
+      this.imgUploadService.deleteImgFile(item, filePath);
+    });
   }
 }

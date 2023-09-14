@@ -30,7 +30,7 @@ import { SearchModule } from './elasticsearch/search.module';
     SongModule,
     SongUploadModule,
     ImageUploadModule,
-    SearchModule,
+    SearchModule
   ],
 })
 export class AppModule {}
