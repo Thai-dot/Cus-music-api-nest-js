@@ -24,4 +24,8 @@ export class PlayListDto {
   @IsBoolean()
   @IsOptional()
   visibility = false;
+
+  @IsString()
+  @IsOptional()
+  imgURL?: string;
 }

@@ -76,7 +76,7 @@ export class SongService {
 
       const body = {
         from: (page - 1) * limit,
-        size: limit,
+        size: limit
       };
 
       if (query !== null) {
@@ -85,7 +85,7 @@ export class SongService {
       const data = await this.searchService.searchIndex(
         ES_INDEX_NAME.song,
         body,
-        '1m',
+        '15s',
       );
 
       return { data: data.hits.hits, totalItems: data.hits.total };
@@ -96,11 +96,9 @@ export class SongService {
 
   async getSingleSong(songID: number) {
     try {
-     
       const updatedSong = await this.prismaService.song.update({
         where: { id: songID },
         data: { listenTimes: { increment: 1 } },
-  
       });
       await this.searchService.updateDocument(
         ES_INDEX_NAME.song,
@@ -120,11 +118,16 @@ export class SongService {
         data: {
           songName: dto.songName,
           songFileName: dto.songFileName,
+          songURL: dto.songURL,
           extension: dto.extension,
           imgURL: dto.imgURL,
           size: dto.size,
           type: dto.type,
           visibility: dto.visibility,
+          author: dto.author,
+          imgFileName: dto.imgFileName,
+          likes: dto.likes,
+          dislikes: dto.dislikes,
           userID: id,
         },
       });

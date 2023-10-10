@@ -64,6 +64,18 @@ export class AuthService {
 
     if (user && code === this.temporaryCodes) {
       this.temporaryCodes = '';
+
+      if (!user.isVerify) {
+        await this.prismaService.user.update({
+          where: {
+            id: user.id,
+          },
+          data: {
+            isVerify: true,
+          },
+        });
+      }
+
       return this.signToken(user);
     }
 
@@ -88,7 +100,7 @@ export class AuthService {
       await this.send2FACodeToEmail(findUser.email);
 
       // should remove token from here. For the sake of testing, still not remove this line of code yet
-      return this.signToken(findUser);
+      //  return this.signToken(findUser);
     } catch (error) {
       throw error;
     }

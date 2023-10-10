@@ -8,12 +8,15 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { PlayListDto, QueryGetAllPlayList } from './dto';
 import { SearchService } from 'src/elasticsearch/search.service';
 import { ES_INDEX_NAME } from 'src/constant/elastic.constant';
+import { getImgFilePath } from 'src/constant/file-path.constant';
+import { ImageUploadService } from 'src/image-upload/image-upload.service';
 
 @Injectable()
 export class PlayListService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly elasticSearch: SearchService,
+    private readonly imgUploadService: ImageUploadService,
   ) {}
 
   async getAllPlayList(query: QueryGetAllPlayList) {
@@ -260,6 +263,8 @@ export class PlayListService {
         },
       });
 
+      await this.findFileToDelete(dto);
+
       await this.elasticSearch.deleteMultipleDocuments(
         ES_INDEX_NAME.playlist,
         dto.map(String),
@@ -271,5 +276,25 @@ export class PlayListService {
     } catch (error) {
       throw error;
     }
+  }
+
+  async findFileToDelete(dto: number[]) {
+    const getDataBeforeDelete = await this.prismaService.playList.findMany({
+      where: {
+        id: {
+          in: dto,
+        },
+      },
+      select: {
+        imgURL: true,
+      },
+    });
+
+    const listOfImgFileName = getDataBeforeDelete.map((item) => item.imgURL);
+
+    listOfImgFileName.forEach((item) => {
+      const filePath = getImgFilePath(item);
+      this.imgUploadService.deleteImgFile(item, filePath);
+    });
   }
 }

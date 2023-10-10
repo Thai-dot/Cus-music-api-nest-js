@@ -10,7 +10,6 @@ export class SearchService {
       const body = await this.elasticsearchService.search({
         index,
         body: input_body,
-        scroll: scroll ?? 0,
       });
       return body;
     } catch (error) {
