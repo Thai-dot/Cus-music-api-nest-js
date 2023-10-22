@@ -28,4 +28,8 @@ export class PlayListDto {
   @IsString()
   @IsOptional()
   imgURL?: string;
+
+  @IsString()
+  @IsOptional()
+  imgName?: string;
 }

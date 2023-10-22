@@ -1,3 +1,4 @@
+import { PlayListType } from '@prisma/client';
 import { Type } from 'class-transformer';
 import {
   IsEnum,
@@ -39,4 +40,11 @@ export class QueryGetAllPlayList {
 
   @IsEnum(SortBy)
   sortBy = SortBy.Name;
+
+  @IsEnum(PlayListType)
+  @IsOptional()
+  type: PlayListType;
+
+  @IsOptional()
+  visibility: boolean;
 }

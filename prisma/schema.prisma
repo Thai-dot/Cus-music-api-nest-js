@@ -52,6 +52,7 @@ model PlayList {
   type       PlayListType? @default(UNKNOW)
   visibility Boolean       @default(false)
   imgURL     String?       @default("")
+  imgName    String?       @default("")
 
   userID Int
   user   User           @relation(fields: [userID], references: [id], onDelete: Cascade)

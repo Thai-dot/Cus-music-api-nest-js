@@ -21,15 +21,24 @@ export class PlayListService {
 
   async getAllPlayList(query: QueryGetAllPlayList) {
     try {
-      const { searchName, limit, page, sortBy, sortType } = query;
+      const { searchName, limit, page, sortBy, sortType, type, visibility } =
+        query;
 
       const queryBody: any = [
         {
           match: {
-            visibility: true,
+            visibility: visibility,
           },
         },
       ];
+
+      if (type !== undefined) {
+        queryBody.push({
+          match: {
+            type: type,
+          },
+        });
+      }
       if (searchName?.length !== 0) {
         queryBody.push({
           match_phrase_prefix: {
@@ -72,12 +81,13 @@ export class PlayListService {
 
   async getPlayListByUser(userID: number, query: QueryGetAllPlayList) {
     try {
-      const { searchName, limit, page, sortBy, sortType } = query;
+      const { searchName, limit, page, sortBy, sortType, visibility, type } =
+        query;
 
       const queryBody: any = [
         {
           match: {
-            visibility: true,
+            visibility: visibility,
           },
         },
         {
@@ -86,6 +96,14 @@ export class PlayListService {
           },
         },
       ];
+
+      if (type !== undefined) {
+        queryBody.push({
+          match: {
+            type: type,
+          },
+        });
+      }
       if (searchName?.length !== 0) {
         queryBody.push({
           match_phrase_prefix: {
@@ -201,7 +219,7 @@ export class PlayListService {
         playListID,
         songID,
       }));
-      const result = await this.prismaService.playListSong.createMany({
+      await this.prismaService.playListSong.createMany({
         data: createData,
         skipDuplicates: true,
       });

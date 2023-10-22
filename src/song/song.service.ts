@@ -41,7 +41,13 @@ export class SongService {
     try {
       const { songName, type, limit, page, visibility } = queryDTO;
 
-      const queryBody: any = [];
+      const queryBody: any = [
+        {
+          match: {
+            userID: userID,
+          },
+        },
+      ];
       if (visibility) {
         queryBody.push({
           match: {
@@ -76,7 +82,7 @@ export class SongService {
 
       const body = {
         from: (page - 1) * limit,
-        size: limit
+        size: limit,
       };
 
       if (query !== null) {
@@ -87,6 +93,7 @@ export class SongService {
         body,
         '15s',
       );
+
 
       return { data: data.hits.hits, totalItems: data.hits.total };
     } catch (error) {
