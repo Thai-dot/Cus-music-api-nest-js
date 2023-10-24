@@ -17,7 +17,7 @@ enum SortType {
 
 enum SortBy {
   Name = 'name',
-  Date = 'date',
+  Date = 'updateAt',
   Type = 'type',
 }
 

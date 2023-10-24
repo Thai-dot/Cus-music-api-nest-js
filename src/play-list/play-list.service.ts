@@ -24,13 +24,15 @@ export class PlayListService {
       const { searchName, limit, page, sortBy, sortType, type, visibility } =
         query;
 
-      const queryBody: any = [
-        {
+      const queryBody: any = [];
+
+      if (visibility) {
+        queryBody.push({
           match: {
             visibility: visibility,
           },
-        },
-      ];
+        });
+      }
 
       if (type !== undefined) {
         queryBody.push({
@@ -87,15 +89,18 @@ export class PlayListService {
       const queryBody: any = [
         {
           match: {
-            visibility: visibility,
-          },
-        },
-        {
-          match: {
             userID: userID,
           },
         },
       ];
+
+      if (visibility) {
+        queryBody.push({
+          match: {
+            visibility: visibility,
+          },
+        });
+      }
 
       if (type !== undefined) {
         queryBody.push({
@@ -119,6 +124,7 @@ export class PlayListService {
           {
             [`${sortBy}.keyword`]: {
               order: sortType,
+
             },
           },
         ],
