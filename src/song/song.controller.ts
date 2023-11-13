@@ -31,6 +31,11 @@ export class SongController {
     return this.songService.getAllSongByPlayList(id);
   }
 
+  @Get("/all")
+  getAllSong(@GetUser('id') UserID: number, @Query() query:SongQueryDTO){
+    return this.songService.getAllSong(UserID,query);
+  }
+
   @Get('get-all')
   getAllSongByUser(@GetUser('id') UserID: number, @Query() query:SongQueryDTO) {
     return this.songService.getAllSongByUser(UserID, query);

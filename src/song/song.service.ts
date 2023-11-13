@@ -10,6 +10,7 @@ import {
   getSongFilePath,
 } from 'src/constant/file-path.constant';
 import { ImageUploadService } from 'src/image-upload/image-upload.service';
+import { contains } from 'class-validator';
 
 @Injectable()
 export class SongService {
@@ -32,6 +33,87 @@ export class SongService {
       });
 
       return getAllData;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getAllSong(userID: number, queryDTO: SongQueryDTO) {
+    try {
+      const { songName, type, limit, page, showMySong } = queryDTO;
+      console.log(showMySong, typeof showMySong);
+      const allQuery = {
+        OR: [
+          {
+            visibility: true,
+            ...(!!songName
+              ? {
+                  songName: {
+                    contains: songName,
+                  },
+                }
+              : {}),
+            ...(!!type
+              ? {
+                  type: type,
+                }
+              : {}),
+          },
+          {
+            visibility: false,
+            userID: userID,
+            ...(!!songName
+              ? {
+                  songName: {
+                    contains: songName,
+                  },
+                }
+              : {}),
+            ...(!!type
+              ? {
+                  type: type,
+                }
+              : {}),
+          },
+        ],
+      };
+
+      const mySongQuery = {
+        userID: userID,
+        ...(!!songName
+          ? {
+              songName: {
+                contains: songName,
+              },
+            }
+          : {}),
+        ...(!!type
+          ? {
+              type: type,
+            }
+          : {}),
+      };
+
+      const isOnlyMyQuery = showMySong.toString() === "true" ? mySongQuery : allQuery;
+
+
+      const [count, songs] = await Promise.all([
+        this.prismaService.song.count({
+          where: isOnlyMyQuery,
+        }),
+        this.prismaService.song.findMany({
+          where: isOnlyMyQuery,
+          skip: (page - 1) * limit,
+          take: limit,
+          include: {
+            playList: true,
+          },
+        }),
+      ]).then((res) => {
+        return [res[0], res[1]];
+      });
+
+      return { totalCount: count, songs };
     } catch (error) {
       throw error;
     }
@@ -93,7 +175,6 @@ export class SongService {
         body,
         '15s',
       );
-
 
       return { data: data.hits.hits, totalItems: data.hits.total };
     } catch (error) {

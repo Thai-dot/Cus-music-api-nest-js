@@ -29,4 +29,7 @@ export class SongQueryDTO {
 
   @IsOptional()
   visibility: boolean;
+
+  @IsOptional()
+  showMySong: boolean;
 }

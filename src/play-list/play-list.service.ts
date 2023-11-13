@@ -3,13 +3,15 @@ import {
   NotFoundException,
   BadRequestException,
   HttpStatus,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { PlayListDto, QueryGetAllPlayList } from './dto';
+import { PlayListDto, QueryGetAllPlayList, ReorderMap } from './dto';
 import { SearchService } from 'src/elasticsearch/search.service';
 import { ES_INDEX_NAME } from 'src/constant/elastic.constant';
 import { getImgFilePath } from 'src/constant/file-path.constant';
 import { ImageUploadService } from 'src/image-upload/image-upload.service';
+import UserSecureSelect from 'src/constant/user-secure-select';
 
 @Injectable()
 export class PlayListService {
@@ -19,7 +21,7 @@ export class PlayListService {
     private readonly imgUploadService: ImageUploadService,
   ) {}
 
-  async getAllPlayList(query: QueryGetAllPlayList) {
+  async getAllPlayList(query: QueryGetAllPlayList, userId: number) {
     try {
       const { searchName, limit, page, sortBy, sortType, type, visibility } =
         query;
@@ -62,6 +64,10 @@ export class PlayListService {
         query: {
           bool: {
             must: queryBody,
+            should: [
+              { term: { userID: userId } },
+              { term: { visibility: false } },
+            ],
           },
         },
       };
@@ -124,7 +130,6 @@ export class PlayListService {
           {
             [`${sortBy}.keyword`]: {
               order: sortType,
-
             },
           },
         ],
@@ -155,12 +160,20 @@ export class PlayListService {
       const data = await this.prismaService.playList.findFirst({
         where: {
           id,
-          userID,
         },
         include: {
-          song: true,
+          song: {
+            include: {
+              Song: true,
+            },
+          },
+          user: UserSecureSelect,
         },
       });
+
+      if (data.visibility === false && data.userID !== userID) {
+        throw new Error();
+      }
 
       if (Object.keys(data).length === 0)
         return new NotFoundException("Can't find any playlist");
@@ -221,10 +234,20 @@ export class PlayListService {
       if (songIDsDTO.length === 0)
         return new BadRequestException('Array is empty');
 
-      const createData = songIDsDTO.map((songID) => ({
-        playListID,
-        songID,
-      }));
+      const getMaximumOrder = await this.prismaService.playListSong.aggregate({
+        _max: {
+          order: true,
+        },
+        where: { playListID },
+      });
+
+      const createData = songIDsDTO.map((songID) => {
+        return {
+          playListID,
+          songID,
+          order: getMaximumOrder._max.order + 1,
+        };
+      });
       await this.prismaService.playListSong.createMany({
         data: createData,
         skipDuplicates: true,
@@ -258,6 +281,40 @@ export class PlayListService {
     } catch (error) {
       throw error;
     }
+  }
+
+  async reorderSongByPlaylist(playlistID: number, reorderMap: ReorderMap[]) {
+    if (reorderMap.length === 0) {
+      return new BadRequestException('Array is empty');
+    }
+    const oldReorder = await this.prismaService.playListSong.findMany({
+      where: {
+        playListID: playlistID,
+      },
+    });
+
+    if (oldReorder.length !== reorderMap.length) {
+      return new BadRequestException(
+        'The provided array are not the same as the old order array',
+      );
+    }
+
+    await Promise.all(
+      reorderMap.map(async (item) => {
+        await this.prismaService.playListSong.update({
+          where: {
+            playListID: playlistID,
+            songID: item.songID,
+            playListID_songID: { playListID: playlistID, songID: item.songID },
+          },
+          data: {
+            order: item.order,
+          },
+        });
+      }),
+    );
+
+    return 'Reordered successfully';
   }
 
   async deletePlayLists(userID: number, dto: number[]) {

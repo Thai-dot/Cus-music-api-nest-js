@@ -18,6 +18,6 @@ export class PlaylistOwnerGuard implements CanActivate {
       },
     });
 
-    return !!isOwner;
+    return !!isOwner.id;
   }
 }

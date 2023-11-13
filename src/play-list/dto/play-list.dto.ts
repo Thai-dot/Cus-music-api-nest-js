@@ -3,6 +3,7 @@ import {
   IsBoolean,
   IsEnum,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   MaxLength,
@@ -32,4 +33,12 @@ export class PlayListDto {
   @IsString()
   @IsOptional()
   imgName?: string;
+}
+
+export class ReorderMap {
+  @IsNumber()
+  songID: number;
+
+  @IsNumber()
+  order: number;
 }

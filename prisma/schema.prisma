@@ -99,8 +99,11 @@ model Song {
 model PlayListSong {
   playListID Int
   songID     Int
-  PlayList   PlayList @relation(fields: [playListID], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  Song       Song     @relation(fields: [songID], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  order Int  @default(0)
+
+  PlayList PlayList @relation(fields: [playListID], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Song     Song     @relation(fields: [songID], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   createAt DateTime @default(now())
   updateAt DateTime @updatedAt

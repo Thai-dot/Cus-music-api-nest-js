@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { GetUser } from 'src/auth/decorator';
 import { JwtGuard } from 'src/auth/guard';
-import { PlayListDto, QueryGetAllPlayList } from './dto';
+import { PlayListDto, QueryGetAllPlayList, ReorderMap } from './dto';
 import { TransformInterceptor } from 'src/interceptor/response.interceptor';
 import { PlaylistOwnerGuard } from './guard';
 
@@ -25,8 +25,8 @@ export class PlayListController {
   constructor(private _playListService: PlayListService) {}
 
   @Get('get-all')
-  getAll(@Query() query: QueryGetAllPlayList) {
-    return this._playListService.getAllPlayList(query);
+  getAll(@Query() query: QueryGetAllPlayList, @GetUser('id') userId: number) {
+    return this._playListService.getAllPlayList(query, userId);
   }
 
   @Get('get')
@@ -75,6 +75,15 @@ export class PlayListController {
     @Body(new ParseArrayPipe()) dto: number[],
   ) {
     return this._playListService.unassignedSongFromPlayList(playListID, dto);
+  }
+
+  @UseGuards(PlayListController)
+  @Patch('/reorder/:id')
+  reorderSongInPlaylist(
+    @Param('id', ParseIntPipe) playlistID: number,
+    @Body() dto: ReorderMap[],
+  ) {
+    return this._playListService.reorderSongByPlaylist(playlistID, dto);
   }
 
   @Delete('delete')
