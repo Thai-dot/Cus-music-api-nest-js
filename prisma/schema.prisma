@@ -30,8 +30,9 @@ model User {
 
   role UserEnum @default(NORMAL)
 
-  PlayList PlayList[]
-  Song     Song[]
+  PlayList      PlayList[]
+  Song          Song[]
+  LovedPlayList LovedPlayList[]
 }
 
 enum PlayListType {
@@ -54,9 +55,10 @@ model PlayList {
   imgURL     String?       @default("")
   imgName    String?       @default("")
 
-  userID Int
-  user   User           @relation(fields: [userID], references: [id], onDelete: Cascade)
-  song   PlayListSong[]
+  userID        Int
+  user          User            @relation(fields: [userID], references: [id], onDelete: Cascade)
+  song          PlayListSong[]
+  LovedPlayList LovedPlayList[]
 }
 
 enum SONG_TYPE {
@@ -100,7 +102,7 @@ model PlayListSong {
   playListID Int
   songID     Int
 
-  order Int  @default(0)
+  order Int @default(0)
 
   PlayList PlayList @relation(fields: [playListID], references: [id], onDelete: Cascade, onUpdate: Cascade)
   Song     Song     @relation(fields: [songID], references: [id], onDelete: Cascade, onUpdate: Cascade)
@@ -109,4 +111,16 @@ model PlayListSong {
   updateAt DateTime @updatedAt
 
   @@id([playListID, songID])
+}
+
+model LovedPlayList {
+  userID     Int
+  playlistID Int
+
+  User     User     @relation(fields: [userID], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  Playlist PlayList @relation(fields: [playlistID], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  @@id([userID, playlistID])
 }

@@ -12,6 +12,7 @@ import { ES_INDEX_NAME } from 'src/constant/elastic.constant';
 import { getImgFilePath } from 'src/constant/file-path.constant';
 import { ImageUploadService } from 'src/image-upload/image-upload.service';
 import UserSecureSelect from 'src/constant/user-secure-select';
+import stringToBoolean from 'src/util/convert-string-to-boolean';
 
 @Injectable()
 export class PlayListService {
@@ -21,10 +22,18 @@ export class PlayListService {
     private readonly imgUploadService: ImageUploadService,
   ) {}
 
-  async getAllPlayList(query: QueryGetAllPlayList, userId: number) {
+  async getAllPlayList(query: QueryGetAllPlayList) {
     try {
-      const { searchName, limit, page, sortBy, sortType, type, visibility } =
-        query;
+      const {
+        searchName,
+        limit,
+        page,
+        sortBy,
+        sortType,
+        type,
+        visibility,
+        isLove,
+      } = query;
 
       const queryBody: any = [];
 
@@ -64,10 +73,6 @@ export class PlayListService {
         query: {
           bool: {
             must: queryBody,
-            should: [
-              { term: { userID: userId } },
-              { term: { visibility: false } },
-            ],
           },
         },
       };
@@ -89,8 +94,17 @@ export class PlayListService {
 
   async getPlayListByUser(userID: number, query: QueryGetAllPlayList) {
     try {
-      const { searchName, limit, page, sortBy, sortType, visibility, type } =
-        query;
+      const {
+        searchName,
+        limit,
+        page,
+        sortBy,
+        sortType,
+        visibility,
+        type,
+        isLove,
+      } = query;
+      const convertIsLove = stringToBoolean(isLove?.toString());
 
       const queryBody: any = [
         {
@@ -123,6 +137,18 @@ export class PlayListService {
         });
       }
 
+      let getLoveArray: any = [];
+
+      if (convertIsLove) {
+        const data = await this.prismaService.lovedPlayList.findMany({
+          where: {
+            userID: userID,
+          },
+        });
+
+        getLoveArray = data.map((item) => item.playlistID);
+      }
+
       const body = {
         from: (page - 1) * limit,
         size: limit,
@@ -136,6 +162,15 @@ export class PlayListService {
         query: {
           bool: {
             must: queryBody,
+            ...(convertIsLove
+              ? {
+                  filter: {
+                    terms: {
+                      id: getLoveArray,
+                    },
+                  },
+                }
+              : {}),
           },
         },
       };
@@ -315,6 +350,62 @@ export class PlayListService {
     );
 
     return 'Reordered successfully';
+  }
+
+  // Love playlist section
+
+  async getLovePlaylist(userID: number, playlistID: number) {
+    try {
+      const data = await this.prismaService.lovedPlayList.findMany({
+        where: {
+          userID: userID,
+          ...(!!playlistID
+            ? {
+                playlistID: playlistID,
+              }
+            : {}),
+        },
+        include: {
+          Playlist: true,
+        },
+      });
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async addLovePlaylist(playlistID: number, userID: number) {
+    console.log(playlistID, userID);
+    try {
+      const data = await this.prismaService.lovedPlayList.create({
+        data: {
+          userID: userID,
+          playlistID: playlistID,
+        },
+      });
+
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async removeLovePlaylist(playlistID: number, userID: number) {
+    try {
+      await this.prismaService.lovedPlayList.delete({
+        where: {
+          userID_playlistID: {
+            userID: userID,
+            playlistID: playlistID,
+          },
+        },
+      });
+
+      return 'Delete successfully';
+    } catch (error) {
+      throw error;
+    }
   }
 
   async deletePlayLists(userID: number, dto: number[]) {

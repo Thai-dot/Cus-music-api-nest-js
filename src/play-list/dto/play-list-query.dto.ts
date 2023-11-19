@@ -47,4 +47,7 @@ export class QueryGetAllPlayList {
 
   @IsOptional()
   visibility: boolean;
+
+  @IsOptional()
+  isLove: boolean | string;
 }
